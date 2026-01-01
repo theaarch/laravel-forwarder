@@ -32,7 +32,7 @@ class InstallCommand extends Command
     public function handle()
     {
         $this->callSilent('vendor:publish', [
-            '----provider' => SmsForwarderServiceProvider::class,
+            '--provider' => SmsForwarderServiceProvider::class,
         ]);
 
         $this->registerPaymentServiceProvider();
