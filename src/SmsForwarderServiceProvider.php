@@ -55,6 +55,7 @@ class SmsForwarderServiceProvider extends ServiceProvider
             Route::group([
                 'domain' => config('sms_forwarder.domain', null),
                 'prefix' => config('sms_forwarder.prefix'),
+                'as' => 'sms_forwarder.',
             ], function () {
                 $this->loadRoutesFrom(__DIR__.'/../routes/routes.php');
             });

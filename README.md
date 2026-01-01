@@ -5,7 +5,7 @@ composer require theaarch64/laravel-sms-forwarder:dev-main
 ```
 
 ```bash
-php artisan vendor:publish --provider="Theaarch\SmsForwarder\SmsForwarderServiceProvider"
+php artisan sms-forwarder:install
 ```
 
 `app/Actions/SmsForwarder/HandleWebhook.php`
