@@ -41,8 +41,7 @@ class WebhookSignature
         }
 
         // Check if timestamp is within tolerance
-        $t = round((microtime(true) * 1000));
-        if (($tolerance > 0) && (abs($t - $timestamp) > ($tolerance * 1000))) {
+        if (($tolerance > 0) && (abs(time() - round($timestamp / 1000)) > $tolerance)) {
             throw SignatureVerificationException::factory(
                 'Timestamp outside the tolerance zone',
                 $payload
