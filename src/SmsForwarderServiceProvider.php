@@ -34,12 +34,12 @@ class SmsForwarderServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../stubs/sms_forwarder.php' => config_path('sms_forwarder.php'),
+                __DIR__.'/../stubs/sms_forwarder.php' => $this->app->configPath('sms_forwarder.php'),
             ], 'sms-forwarder-config');
 
             $this->publishes([
-                __DIR__.'/../stubs/HandleWebhook.php' => app_path('Actions/SmsForwarder/HandleWebhook.php'),
-                __DIR__.'/../stubs/SmsForwarderServiceProvider.php' => app_path('Providers/SmsForwarderServiceProvider.php'),
+                __DIR__.'/../stubs/HandleWebhook.php' => $this->app->basePath('app/Actions/SmsForwarder/HandleWebhook.php'),
+                __DIR__.'/../stubs/SmsForwarderServiceProvider.php' => $this->app->basePath('app/Providers/SmsForwarderServiceProvider.php'),
             ], 'sms-forwarder-support');
         }
     }

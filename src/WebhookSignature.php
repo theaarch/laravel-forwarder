@@ -10,83 +10,53 @@ class WebhookSignature
      * Verifies the signature payload sent by SmsForwarder.
      *
      * @param  string  $payload
-     * @param  string  $header
      * @param  string  $secret
      * @param  int|null  $tolerance
      * @return bool
      *
      * @throws SignatureVerificationException
      */
-    public static function verifyPayload(string $payload, string $header, string $secret, int $tolerance = null): bool
+    /**
+     * Verifies the signature payload sent by SmsForwarder.
+     *
+     * @param  array  $payload
+     * @param  string  $secret
+     * @param  int|null  $tolerance
+     * @return bool
+     *
+     * @throws SignatureVerificationException
+     */
+    public static function verifyPayload(array $payload, string $secret, int $tolerance = null): bool
     {
-        $timestamp = self::getTimestamp($payload);
-        $signature = self::getSignature($payload);
+        $timestamp = $payload['timestamp'] ?? null;
+        $signature = $payload['sign'] ?? null;
 
-        if (empty($timestamp)) {
+        if (empty($timestamp) || empty($signature)) {
             throw SignatureVerificationException::factory(
                 'Unable to extract timestamp and signatures from payload',
-                $payload,
-                $header
+                http_build_query($payload)
             );
         }
 
-        if (empty($signatures)) {
-            throw SignatureVerificationException::factory(
-                'No signatures found with expected scheme',
-                $payload,
-                $header
-            );
-        }
+        $beforeSign = $timestamp . "\n" . $secret;
+        $expectedSignature = self::computeSignature($beforeSign, $secret);
 
-        $signedPayload = $timestamp."\n".$secret;
-        $expectedSignature = self::computeSignature($signedPayload, $secret);
-
-        $signatureFound = hash_equals($expectedSignature, $signature);
-
-        if (!$signatureFound) {
+        if (! hash_equals($expectedSignature, $signature)) {
             throw SignatureVerificationException::factory(
                 'No signatures found matching the expected signature for payload',
-                $payload,
-                $header
+                http_build_query($payload)
             );
         }
 
         // Check if timestamp is within tolerance
-        if (($tolerance > 0) && (\abs(\time() - $timestamp) > $tolerance)) {
+        if (($tolerance > 0) && (abs(time() - $timestamp) > $tolerance)) {
             throw SignatureVerificationException::factory(
                 'Timestamp outside the tolerance zone',
-                $payload,
-                $header
+                http_build_query($payload)
             );
         }
 
         return true;
-    }
-
-    /**
-     * Extracts the timestamp in the payload.
-     *
-     * @param  string  $payload
-     * @return string|null
-     */
-    private static function getTimestamp(string $payload): ?string
-    {
-        parse_str($payload, $result);
-
-        return $result['timestamp'];
-    }
-
-    /**
-     * Extracts the signature in the payload.
-     *
-     * @param  string  $payload
-     * @return string|null
-     */
-    private static function getSignature(string $payload): ?string
-    {
-        parse_str($payload, $result);
-
-        return $result['sign'];
     }
 
     /**

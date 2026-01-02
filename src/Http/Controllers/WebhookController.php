@@ -27,7 +27,7 @@ class WebhookController extends Controller
      */
     public function handle(Request $request, HandlesWebhooks $handler)
     {
-        $payload = json_decode($request->getContent(), true);
+        $payload = $request->input();
 
         WebhookReceived::dispatch($payload);
 
