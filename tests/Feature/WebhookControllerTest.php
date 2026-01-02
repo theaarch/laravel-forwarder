@@ -35,11 +35,19 @@ it('can handle webhook calls', function () {
     parse_str($raw, $payload);
 
     Event::assertDispatched(WebhookReceived::class, function ($event) use ($payload) {
-        return $event->payload['foo'] == $payload['foo'];
+        /** @var \Illuminate\Http\Request $request */
+        $request = $event->request;
+        parse_str($request->getContent(), $data);
+
+        return $data['foo'] == $payload['foo'];
     });
 
     Event::assertDispatched(WebhookHandled::class, function ($event) use ($payload) {
-        return $event->payload['foo'] == $payload['foo'];
+        /** @var \Illuminate\Http\Request $request */
+        $request = $event->request;
+        parse_str($request->getContent(), $data);
+
+        return $data['foo'] == $payload['foo'];
     });
 });
 

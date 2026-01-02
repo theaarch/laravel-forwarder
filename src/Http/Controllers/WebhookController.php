@@ -27,13 +27,11 @@ class WebhookController extends Controller
      */
     public function handle(Request $request, HandlesWebhooks $handler)
     {
-        parse_str($request->getContent(), $payload);
+        WebhookReceived::dispatch($request);
 
-        WebhookReceived::dispatch($payload);
+        $response = $handler->handle($request);
 
-        $response = $handler->handle($payload);
-
-        WebhookHandled::dispatch($payload);
+        WebhookHandled::dispatch($request);
 
         return $response;
     }

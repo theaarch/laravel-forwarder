@@ -2,6 +2,7 @@
 
 namespace Theaarch\SmsForwarder\Contracts;
 
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 interface HandlesWebhooks
@@ -9,8 +10,8 @@ interface HandlesWebhooks
     /**
      * Handle a webhook call.
      *
-     * @param  array  $payload
+     * @param  Request  $request
      * @return Response
      */
-    public function handle(array $payload): Response;
+    public function handle(Request $request): Response;
 }
