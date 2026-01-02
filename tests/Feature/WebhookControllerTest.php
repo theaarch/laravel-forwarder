@@ -11,7 +11,9 @@ it('can handle webhook calls', function () {
     Event::fake();
 
     $mock = Mockery::mock(HandlesWebhooks::class);
-    $mock->shouldReceive('handle')->andReturn(response('ok'));
+    $mock->shouldReceive('handle')->andReturn(
+        response('ok')
+    );
 
     SmsForwarder::handleWebhookUsing(function () use ($mock) {
         return $mock;
@@ -19,11 +21,15 @@ it('can handle webhook calls', function () {
 
     $payload = ['foo' => 'bar'];
 
-    $response = $this->withHeaders([
-        'Content-Type' => 'application/x-www-form-urlencoded',
-    ])->post(
-        route('sms_forwarder.webhook'),
-        $payload
+    $raw = 'foo=bar';
+    $response = $this->call(
+        method: 'POST',
+        uri: route('sms_forwarder.webhook'),
+        server: [
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH' => strlen($raw),
+        ],
+        content: $raw
     );
 
     $response->assertOk();
@@ -38,31 +44,34 @@ it('can handle webhook calls', function () {
 });
 
 it('verifies webhook signature when secret is set', function () {
-    Config::set('sms_forwarder.webhook.secret', 'test-secret');
+    $secret = 'test-secret';
+
+    Config::set('sms_forwarder.webhook.secret', $secret);
 
     $mock = Mockery::mock(HandlesWebhooks::class);
-    $mock->shouldReceive('handle')->andReturn(response('ok'));
+    $mock->shouldReceive('handle')->andReturn(
+        response('ok')
+    );
 
     SmsForwarder::handleWebhookUsing(function () use ($mock) {
         return $mock;
     });
 
     $timestamp = time();
-    $data = ['foo' => 'bar', 'timestamp' => $timestamp];
-    $secret = 'test-secret';
 
-    $beforeSign = $timestamp . "\n" . $secret;
-    $signature = urlencode(base64_encode(
-        hash_hmac('sha256', $beforeSign, $secret, true)
-    ));
+    $signedPayload = "{$timestamp}\n{$secret}";
+    $binary = hash_hmac('sha256', $signedPayload, $secret, true);
+    $signature = urlencode(base64_encode($binary));
 
-    $postData = array_merge($data, ['sign' => $signature]);
-
-    $response = $this->withHeaders([
-        'Content-Type' => 'application/x-www-form-urlencoded',
-    ])->post(
-        route('sms_forwarder.webhook'),
-        $postData
+    $raw = "foo=bar&timestamp={$timestamp}&sign={$signature}";
+    $response = $this->call(
+        method: 'POST',
+        uri: route('sms_forwarder.webhook'),
+        server: [
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH' => strlen($raw),
+        ],
+        content: $raw
     );
 
     $response->assertOk();
@@ -71,11 +80,15 @@ it('verifies webhook signature when secret is set', function () {
 it('fails when signature is missing but secret is set', function () {
     Config::set('sms_forwarder.webhook.secret', 'test-secret');
 
-    $response = $this->withHeaders([
-        'Content-Type' => 'application/x-www-form-urlencoded',
-    ])->post(
-        route('sms_forwarder.webhook'),
-        ['foo' => 'bar']
+    $raw = "foo=bar";
+    $response = $this->call(
+        method: 'POST',
+        uri: route('sms_forwarder.webhook'),
+        server: [
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH' => strlen($raw),
+        ],
+        content: $raw
     );
 
     $response->assertStatus(403);
@@ -86,20 +99,20 @@ it('fails when signature is invalid', function () {
 
     $timestamp = time();
     $secret = 'wrong-secret';
-    $data = ['foo' => 'bar', 'timestamp' => $timestamp];
 
-    $beforeSign = $timestamp . "\n" . $secret;
-    $signature = urlencode(base64_encode(
-        hash_hmac('sha256', $beforeSign, $secret, true)
-    ));
+    $signedPayload = "{$timestamp}\n{$secret}";
+    $binary = hash_hmac('sha256', $signedPayload, $secret, true);
+    $signature = urlencode(base64_encode($binary));
 
-    $postData = array_merge($data, ['sign' => $signature]);
-
-    $response = $this->withHeaders([
-        'Content-Type' => 'application/x-www-form-urlencoded',
-    ])->post(
-        route('sms_forwarder.webhook'),
-        $postData
+    $raw = "foo=bar&timestamp={$timestamp}&sign={$signature}";
+    $response = $this->call(
+        method: 'POST',
+        uri: route('sms_forwarder.webhook'),
+        server: [
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH' => strlen($raw),
+        ],
+        content: $raw
     );
 
     $response->assertStatus(403);

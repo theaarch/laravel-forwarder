@@ -18,9 +18,16 @@ class WebhookSignature
      */
     public static function verifyPayload(string $payload, string $secret, int $tolerance = null): bool
     {
-        parse_str($payload, $result);
-        $timestamp = $result['timestamp'] ?? null;
-        $signature = $result['sign'] ?? null;
+        $data = [];
+        $items = explode('&', $payload);
+
+        foreach ($items as $item) {
+            [$key, $value] = explode('=', $item, 2);
+            $data[$key] = $value;
+        }
+
+        $timestamp = $data['timestamp'] ?? null;
+        $signature = $data['sign'] ?? null;
 
         if (empty($timestamp) || empty($signature)) {
             throw SignatureVerificationException::factory(
@@ -29,8 +36,8 @@ class WebhookSignature
             );
         }
 
-        $stringToSign = $timestamp."\n".$secret;
-        $expectedSignature = self::computeSignature($stringToSign, $secret);
+        $signedPayload = "{$timestamp}\n{$secret}";
+        $expectedSignature = self::computeSignature($signedPayload, $secret);
 
         if (! hash_equals($expectedSignature, $signature)) {
             throw SignatureVerificationException::factory(
